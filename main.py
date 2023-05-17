@@ -2,26 +2,66 @@ import aiohttp
 import asyncio
 from pprint import pprint
 
+from sqlalchemy.ext.asyncio import create_async_engine
 
-async def main():
+from data_store_tools import DataStoreTools
+from config import SQLALCHEMY_DATABASE_URI
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get('https://dummyjson.com/users?limit=20&skip=0') as response:
 
-            print("Status:", response.status)
-            print("Content-type:", response.headers['content-type'])
+async def get_dummy_users(limit, total, wait_time):
+    timeout = aiohttp.ClientTimeout(total=wait_time)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        cnt = 0
+        tasks = []
 
-            response = await response.json()
+        while cnt < total:
+            if total - cnt > limit:
+                tasks.append(asyncio.create_task(session.get(
+                    f'https://dummyjson.com/users?limit={limit}&skip={cnt}')
+                ))
+            else:
+                tasks.append(asyncio.create_task(session.get(
+                    f'https://dummyjson.com/users?limit={total-cnt}&skip={cnt}')
+                ))
+            cnt += limit
 
-            out = [{'name': item['firstName'] + ' ' + item['lastName'],
-                    'phone': item['phone'],
-                    'email': item['email'],
-                    'login': item['username'],
-                    'password': item['password']
-                    } for item in response['users']]
-            # for items in response['users']:
-            # pprint(items)
-            pprint(len(out))
+        responses = await asyncio.gather(*tasks)
+        out = []
+        for item in responses:
+            data = await item.json()
+            result = [{'name': item['firstName'] + ' ' + item['lastName'],
+                       'phone': item['phone'],
+                       'email': item['email'],
+                       'login': item['username'],
+                       'password': item['password']
+                       } for item in data['users']]
+            out.extend(result)
+        return out
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
+
+async def insert_users_to_data_store(tools, users):
+    for user in users:
+        check_user = await tools.chek_user(user['login'])
+        if check_user:
+            await tools.crate_user(
+                user['name'],
+                user['phone'],
+                user['mail'],
+                user['login'],
+                user['password']
+            )
+        else:
+            await tools.crate_user(
+                user['name'],
+                user['phone'],
+                user['mail'],
+                user['login'],
+                user['password']
+            )
+
+
+if __name__ == '__main__':
+    users = asyncio.run(get_dummy_users(5, 20, 1))
+    tools = DataStoreTools(SQLALCHEMY_DATABASE_URI)
+    pprint(users)
+    asyncio.run(insert_users_to_data_store(tools, users))
