@@ -1,8 +1,5 @@
-import asyncio
-from typing import Optional
-
-from sqlalchemy import create_engine, select, update, func
-from sqlalchemy.orm import Session, Load, sessionmaker
+from sqlalchemy import select
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
