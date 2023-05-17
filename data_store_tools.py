@@ -31,6 +31,9 @@ class DataStoreTools():
             async with async_sesion_factory() as session:
                 async with session.begin():
                     try:
+                        # print('PARAM')
+                        # print(args)
+                        # print(kwargs)
                         res = await proc(*args, **kwargs, session=session)
                     except NoResultFound as e:
                         print(
@@ -60,25 +63,25 @@ class DataStoreTools():
         return user
 
     @async_session_executor
+    async def update_user(
+        self, name: str, phone: str, mail: str,
+        password: str, user: Users, session: Session
+    ) -> Users:
+
+        user.name = name
+        user.phone = phone
+        user.mail = mail
+        user.password = bcrypt.hashpw(
+            password.encode(), bcrypt.gensalt()
+        )
+
+        session.add(user)
+        return user
+
+    @async_session_executor
     async def chek_user(self, login: str, session: Session = None) -> bool:
 
         query_user = select(Users).where(Users.login == login)
         query_user_result = await session.execute(query_user)
         user = query_user_result.scalar_one()
         return user
-
-
-async def go():
-    tools = DataStoreTools(SQLALCHEMY_DATABASE_URI)
-    # await tools.crate_user(name='Jhon',
-    #                        phone='1111',
-    #                        mail='jhon@mail.ru',
-    #                        login='Jhon',
-    #                        password='12345'
-    #                        )
-    user = await tools.chek_user(login='Jhon')
-    print(user.login)
-
-
-if __name__ == '__main__':
-    asyncio.run(go())
