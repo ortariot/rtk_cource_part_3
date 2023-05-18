@@ -2,9 +2,10 @@ import asyncio
 from datetime import datetime
 
 from sqlalchemy import (
-    Column, LargeBinary, String, DateTime, BigInteger
+    Column, ForeignKey, Integer, LargeBinary, Boolean,
+    String, DateTime, BigInteger
 )
-from sqlalchemy.orm import declarative_base, declarative_mixin
+from sqlalchemy.orm import declarative_base, declarative_mixin, relationship
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from config import SQLALCHEMY_DATABASE_URI

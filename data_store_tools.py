@@ -8,9 +8,6 @@ import bcrypt
 from models import Users
 
 
-from config import SQLALCHEMY_DATABASE_URI
-
-
 class DataStoreTools():
 
     def __init__(self, uri: str) -> None:
@@ -28,15 +25,11 @@ class DataStoreTools():
             async with async_sesion_factory() as session:
                 async with session.begin():
                     try:
-                        # print('PARAM')
-                        # print(args)
-                        # print(kwargs)
                         res = await proc(*args, **kwargs, session=session)
                     except NoResultFound as e:
                         print(
                             (f'error: {e}  function: {proc.__name__} '
-                             f'args: {args} kwargs: {kwargs}'
-                             )
+                             f'args: {args} kwargs: {kwargs}')
                         )
                         return None
             return res
